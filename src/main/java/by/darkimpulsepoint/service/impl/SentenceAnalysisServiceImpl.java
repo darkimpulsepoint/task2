@@ -9,51 +9,64 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class SentenceAnalysisServiceImpl implements SentenceAnalysisService {
     private static final Logger logger = LogManager.getLogger(SentenceAnalysisServiceImpl.class);
 
     @Override
-    public void findSentencesWithSameWords(TextComponent text) {
+    public TextComponent findSentencesWithSameWords(TextComponent text) {
         List<Composite> sentences = extractSentences(text);
-        Map<String, List<Integer>> wordToSentences = new HashMap<>();
+        Map<String, Set<Integer>> wordToSentenceIndices = new HashMap<>();
 
         for (int i = 0; i < sentences.size(); i++) {
             Set<String> words = extractWords(sentences.get(i));
             for (String word : words) {
-                wordToSentences.computeIfAbsent(word.toLowerCase(), k -> new ArrayList<>()).add(i);
+                wordToSentenceIndices.computeIfAbsent(word.toLowerCase(), k -> new HashSet<>()).add(i);
             }
         }
 
-        Map<String, Integer> wordOccurrences = new HashMap<>();
-        for (Map.Entry<String, List<Integer>> entry : wordToSentences.entrySet()) {
+        Map<String, List<Composite>> result = new HashMap<>();
+        for (Map.Entry<String, Set<Integer>> entry : wordToSentenceIndices.entrySet()) {
             if (entry.getValue().size() > 1) {
-                wordOccurrences.put(entry.getKey(), entry.getValue().size());
+                List<Composite> sentencesWithWord = new ArrayList<>();
+                for (int idx : entry.getValue()) {
+                    sentencesWithWord.add(sentences.get(idx));
+                }
+                result.put(entry.getKey(), sentencesWithWord);
             }
         }
 
-        int maxCount = 0;
-        for (int count : wordOccurrences.values()) {
-            if (count > maxCount) {
-                maxCount = count;
-            }
+        if (result.isEmpty()) {
+            logger.info("Maximum sentences with same word: 0");
+            return text;
         }
+
+        int maxCount = result.values().stream()
+                .mapToInt(List::size)
+                .max()
+                .orElse(0);
 
         logger.info("Maximum sentences with same word: {}", maxCount);
 
-        for (Map.Entry<String, Integer> entry : wordOccurrences.entrySet()) {
-            if (entry.getValue() == maxCount) {
-                logger.info("Word '{}' appears in {} sentences:", entry.getKey(), entry.getValue());
-                List<Integer> sentenceIndices = wordToSentences.get(entry.getKey());
-                for (int idx : sentenceIndices) {
-                    logger.info("  - {}", sentences.get(idx).getContent());
+        Composite resultText = new Composite(ComponentType.TEXT);
+        for (Map.Entry<String, List<Composite>> entry : result.entrySet()) {
+            if (entry.getValue().size() == maxCount) {
+                logger.info("Word '{}' appears in {} sentences:", entry.getKey(), entry.getValue().size());
+                Composite paragraph = new Composite(ComponentType.PARAGRAPH);
+                for (Composite sentence : entry.getValue()) {
+                    logger.info("  - {}", sentence.getContent());
+                    paragraph.add(sentence);
                 }
+                resultText.add(paragraph);
             }
         }
+
+        return resultText;
     }
 
     @Override
-    public void sortSentencesByLetter(TextComponent text, char targetLetter) {
+    public TextComponent sortSentencesByLetter(TextComponent text, char targetLetter) {
         List<Composite> sentences = extractSentences(text);
         List<SentenceWithCount> sentencesWithCount = new ArrayList<>();
 
@@ -65,9 +78,17 @@ public class SentenceAnalysisServiceImpl implements SentenceAnalysisService {
         sentencesWithCount.sort(Comparator.comparingInt(a -> a.count));
 
         logger.info("Sorted {} sentences by letter '{}'", sentences.size(), targetLetter);
+
+        Composite resultText = new Composite(ComponentType.TEXT);
+        Composite paragraph = new Composite(ComponentType.PARAGRAPH);
+
         for (SentenceWithCount swc : sentencesWithCount) {
             logger.info("({}) {}", swc.count, swc.sentence.getContent());
+            paragraph.add(swc.sentence);
         }
+
+        resultText.add(paragraph);
+        return resultText;
     }
 
     private List<Composite> extractSentences(TextComponent component) {

@@ -1,7 +1,10 @@
 package by.darkimpulsepoint.service;
 
+import by.darkimpulsepoint.composite.Composite;
 import by.darkimpulsepoint.composite.TextComponent;
 
+import java.util.List;
+
 public interface SentenceModificationService {
-    void swapFirstLastLexeme(TextComponent text);
+    TextComponent swapFirstLastLexeme(TextComponent text);
 }

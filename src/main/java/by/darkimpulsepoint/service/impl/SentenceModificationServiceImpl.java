@@ -14,10 +14,13 @@ public class SentenceModificationServiceImpl implements SentenceModificationServ
     private static final Logger logger = LogManager.getLogger(SentenceModificationServiceImpl.class);
 
     @Override
-    public void swapFirstLastLexeme(TextComponent text) {
+    public TextComponent swapFirstLastLexeme(TextComponent text) {
         List<Composite> sentences = extractSentences(text);
 
         logger.info("Swapping first and last lexemes in {} sentences", sentences.size());
+
+        Composite resultText = new Composite(ComponentType.TEXT);
+        Composite paragraph = new Composite(ComponentType.PARAGRAPH);
 
         for (Composite sentence : sentences) {
             List<Composite> lexemes = extractLexemes(sentence);
@@ -29,10 +32,15 @@ public class SentenceModificationServiceImpl implements SentenceModificationServ
                 }
                 modifiedSentence.add(lexemes.get(0));
                 logger.info("{}", modifiedSentence.getContent());
+                paragraph.add(modifiedSentence);
             } else {
                 logger.info("{}", sentence.getContent());
+                paragraph.add(sentence);
             }
         }
+
+        resultText.add(paragraph);
+        return resultText;
     }
 
     private List<Composite> extractSentences(TextComponent component) {
