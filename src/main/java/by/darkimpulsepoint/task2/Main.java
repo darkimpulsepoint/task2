@@ -3,7 +3,7 @@ package by.darkimpulsepoint.task2;
 import by.darkimpulsepoint.task2.composite.TextComponent;
 import by.darkimpulsepoint.task2.exception.TextProcessingException;
 import by.darkimpulsepoint.task2.parser.ParserChain;
-import by.darkimpulsepoint.task2.reader.impl.TextFileReaderImpl;
+import by.darkimpulsepoint.task2.reader.impl.TextFileTextReaderImpl;
 import by.darkimpulsepoint.task2.service.*;
 import by.darkimpulsepoint.task2.service.impl.SentenceAnalysisServiceImpl;
 import by.darkimpulsepoint.task2.service.impl.SentenceModificationServiceImpl;
@@ -18,7 +18,7 @@ public class Main {
         try {
             logger.info("Starting text processing application");
 
-            TextFileReaderImpl reader = new TextFileReaderImpl();
+            TextFileTextReaderImpl reader = new TextFileTextReaderImpl();
             String text = reader.read("data/text.txt");
 
             ParserChain parserChain = new ParserChain();
